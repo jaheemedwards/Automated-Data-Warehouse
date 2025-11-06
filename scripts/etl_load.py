@@ -1,3 +1,6 @@
+# -----------------------------
+# Imports
+# -----------------------------
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 from scrape_wiki import scrape_city_coordinates, capitals
@@ -5,27 +8,27 @@ from fetch_weather import get_weather
 import pandas as pd
 import os
 import json
-from sqlalchemy import create_engine
-from dotenv import load_dotenv
-import os
 
 # -----------------------------
 # Load environment variables
 # -----------------------------
-load_dotenv(dotenv_path="credentials.env")
+if os.path.exists("credentials.env"):
+    # Only load local credentials for development
+    load_dotenv(dotenv_path="credentials.env")
 
-# Get the database URL
 db_url = os.getenv("DATABASE_URL")
+if not db_url:
+    raise ValueError("❌ DATABASE_URL is missing or empty")
 
-# Fix for SQLAlchemy (Neon, Supabase, etc.)
-if db_url and db_url.startswith("postgres://"):
+# Fix for older-style URLs
+if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
 
-# Create SQLAlchemy engine
 engine = create_engine(db_url)
 
-# Get API key
 API_KEY = os.getenv("OPENWEATHER_API_KEY")
+if not API_KEY:
+    raise ValueError("❌ OPENWEATHER_API_KEY is missing or empty")
 
 # -----------------------------
 # Insert city into dim_city
@@ -73,14 +76,14 @@ def insert_time(engine, timestamp):
 # -----------------------------
 def insert_weather(engine, city_name, weather_data):
     timestamp = weather_data["timestamp"]
-    
+
     # Get city_id
     with engine.begin() as conn:
         city_id = conn.execute(text("SELECT city_id FROM dim_city WHERE city_name = :name"), {"name": city_name}).scalar()
-    
+
     # Insert or get time_id
     time_id = insert_time(engine, timestamp)
-    
+
     # Insert weather record
     with engine.begin() as conn:
         conn.execute(text("""
@@ -130,13 +133,13 @@ for _, row in capital_data.iterrows():
     city_name = row["city_name"]
     lat = row["latitude"]
     lon = row["longitude"]
-    
+
     weather = get_weather(lat, lon, API_KEY)
-    
+
     if weather is None:
-        print(f"Skipping {city_name} due to API error")
+        print(f"⚠️ Skipping {city_name} due to API error")
         continue
-    
+
     insert_weather(engine, city_name, weather)
 
-print("ETL completed successfully!")
+print("✅ ETL completed successfully!")
