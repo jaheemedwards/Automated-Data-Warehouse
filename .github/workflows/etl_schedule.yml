@@ -29,3 +29,7 @@ jobs:
 
       - name: Run ETL
         run: python scripts/etl_load.py
+
+      - name: ETL Status
+        if: failure()
+        run: echo "ETL failed! Check Actions logs."
