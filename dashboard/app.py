@@ -18,10 +18,21 @@ st.markdown(
 )
 
 # -----------------------------
-# Load environment variables & connect to DB
+# Load environment variables
 # -----------------------------
-load_dotenv(dotenv_path="credentials.env")  
-engine = create_engine(os.getenv("DATABASE_URL"))
+if "DATABASE_URL" in st.secrets:
+    # Running on Streamlit Cloud
+    db_url = st.secrets["DATABASE_URL"]
+    api_key = st.secrets["OPENWEATHER_API_KEY"]
+else:
+    # Running locally
+    load_dotenv(dotenv_path="credentials.env")
+    db_url = os.getenv("DATABASE_URL")
+    api_key = os.getenv("OPENWEATHER_API_KEY")
+
+
+# Create engine
+engine = create_engine(db_url)
 
 # -----------------------------
 # Load data
