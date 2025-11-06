@@ -5,13 +5,27 @@ from fetch_weather import get_weather
 import pandas as pd
 import os
 import json
+from sqlalchemy import create_engine
+from dotenv import load_dotenv
+import os
 
 # -----------------------------
 # Load environment variables
 # -----------------------------
-load_dotenv(dotenv_path="credentials.env")  
+load_dotenv(dotenv_path="credentials.env")
+
+# Get the database URL
+db_url = os.getenv("DATABASE_URL")
+
+# Fix for SQLAlchemy (Neon, Supabase, etc.)
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+
+# Create SQLAlchemy engine
+engine = create_engine(db_url)
+
+# Get API key
 API_KEY = os.getenv("OPENWEATHER_API_KEY")
-engine = create_engine(os.getenv("DATABASE_URL"))
 
 # -----------------------------
 # Insert city into dim_city
